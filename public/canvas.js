@@ -28,20 +28,23 @@ tool.lineWidth = penWidth;
 // mousedown -> start new path, mousemove -> path fill (graphics)
 canvas.addEventListener("mousedown", (e) => {
     mouseDown = true;
-    beginPath({
+    let data = {
         x: e.clientX,
         y: e.clientY
-    })
+    }
+    // send data to server
+    socket.emit("beginPath", data);
 })
 
 canvas.addEventListener("mousemove", (e) => {
     if (mouseDown) {
-        drawStroke({
+        let data = {
             x: e.clientX,
             y: e.clientY,
             color: eraserFlag ? eraserColor : penColor,
             width: eraserFlag ? eraserWidth : penWidth
-        })
+        }
+        socket.emit("drawStroke", data);
     }
 })
 
@@ -56,19 +59,21 @@ canvas.addEventListener("mouseup", (e) => {
 undo.addEventListener("click", (e) => {
     if (track > 0) track--;
     // track action
-    undoRedoCanvas({
+    let data = {
         trackValue: track,
         undoRedoTracker
-    })
+    }
+    socket.emit("redoUndo", data);
 })
 
 redo.addEventListener("click", (e) => {
     if (track < undoRedoTracker.length - 1) track++;
     // track action
-    undoRedoCanvas({
+    let data = {
         trackValue: track,
         undoRedoTracker
-    })
+    }
+    socket.emit("redoUndo", data);
 })
 
 function undoRedoCanvas(trackObj) {
@@ -107,12 +112,10 @@ pencilWidthElem.addEventListener("change", (e) => {
     penWidth = pencilWidthElem.value;
     tool.lineWidth = penWidth;
 })
-
 eraserWidthElem.addEventListener("change", (e) => {
     eraserWidth = eraserWidthElem.value;
     tool.lineWidth = eraserWidth;
 })
-
 eraser.addEventListener("click", (e) => {
     if (eraserFlag) {
         tool.strokeStyle = eraserColor;
@@ -130,4 +133,17 @@ download.addEventListener("click", (e) => {
     a.href = url;
     a.download = "board.jpg";
     a.click();
+})
+
+socket.on("beginPath", (data) => {
+    // data -> data from server
+    beginPath(data);
+})
+
+socket.on("drawStroke", (data) => {
+    drawStroke(data);
+})
+
+socket.on("redoUndo", (data) => {
+    undoRedoCanvas(data);
 })
